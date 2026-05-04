@@ -1,0 +1,119 @@
+================================================================================
+Hospedar o projeto de forma GRATUITA (passo a passo) — visão geral honesta
+================================================================================
+
+Seu sistema tem 3 partes: (1) MySQL com dados  (2) API Python (FastAPI/uvicorn)
+(3) arquivos do site (HTML/CSS/JS na pasta frontend).
+
+“100% grátis + sempre ligado + MySQL incluso” em um único botão é raro. Abaixo
+estão caminhos que funcionam na prática para trabalho acadêmico.
+
+--------------------------------------------------------------------------------
+OPÇÃO A — Mais fácil e rápida (demo para professor): túnel no seu PC
+--------------------------------------------------------------------------------
+
+Você deixa o projeto rodando no seu computador e gera um link público HTTPS.
+
+1) Suba localmente: MySQL + import + uvicorn (como já faz).
+
+2) Instale o ngrok: https://ngrok.com/download (conta grátis).
+
+3) No PowerShell (outra janela):
+     ngrok http 8000
+   (troque 8000 se usar outra porta)
+
+4) O ngrok mostra um endereço tipo: https://abcd-12.ngrok-free.app
+   Esse link abre seu site de qualquer lugar enquanto o PC e o ngrok estiverem ON.
+
+Prós: grátis, rápido, sem mudar código.
+Contras: depende do seu PC ligado; link muda na versão free; não é “hospedagem permanente”.
+
+Alternativa parecida: Cloudflare Tunnel (também expõe localhost com HTTPS).
+
+
+--------------------------------------------------------------------------------
+OPÇÃO B — Site “na internet” grátis: Render (API) + MySQL gratuito externo
+--------------------------------------------------------------------------------
+
+Ideia: API no Render (tier grátis) + banco MySQL em um serviço gratuito (ex. conta
+de testes). Você sobe o código no GitHub e conecta o Render.
+
+AVISO do Render grátis: o serviço “dorme” após inatividade; o 1º acesso pode demorar
+~30–60 s para “acordar”.
+
+PASSO A PASSO (resumido):
+
+(B1) GitHub
+  - Crie um repositório vazio.
+  - NÃO commite senhas: mantenha backend/.env fora do git (use .gitignore).
+  - Envie a pasta do projeto (sem .venv, sem __pycache__).
+
+(B2) MySQL gratuito para testes
+  - Pesquise por serviços de “free MySQL” para desenvolvimento (ex.: db4free e
+    similares). Crie o banco, usuário e senha.
+  - No painel deles, rode o mesmo SQL do arquivo database/schema.sql (Workbench
+    também serve se importarem dump).
+  - Libere “remote access” se o painel pedir host/IP (Render usa IPs dinâmicos;
+    alguns planos free só aceitam % de qualquer host — leia a doc do provedor).
+
+(B3) Render — Web Service
+  - Acesse https://render.com e crie conta.
+  - New + Web Service → conecte o repositório do GitHub.
+  - Configurações sugeridas:
+      * Runtime: Python 3
+      * Root Directory: (deixe vazio se o repo tem backend/ na raiz do projeto)
+      * Build Command:
+          pip install -r backend/requirements.txt
+      * Start Command:
+          cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      * Plano: Free
+
+(B4) Variáveis de ambiente no Render (Environment)
+  - MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
+    (iguais ao que o provedor MySQL gratuito te passou)
+  - CORS_ORIGINS=https://SEU-SERVICO.onrender.com
+    (troque pelo URL real que o Render mostrar, com https)
+
+(B5) Dados
+  - Rode o importador UMA vez apontando para esse MySQL remoto (no seu PC):
+      cd backend
+      python scripts/import_excel.py --file "C:\caminho\planilha.xlsx" --truncate
+    (o .env local pode apontar para o host remoto só para essa importação, ou use
+     variáveis temporárias no PowerShell)
+
+(B6) Teste
+  - Abra https://SEU-SERVICO.onrender.com/
+  - Se der erro de CORS ou 503, confira variáveis e logs no painel do Render.
+
+
+--------------------------------------------------------------------------------
+OPÇÃO C — Só “site estático” grátis (Netlify / Vercel) — NÃO serve sozinha aqui
+--------------------------------------------------------------------------------
+
+Netlify/Vercel hospedam HTML estático de graça, mas a SUA busca depende da API e
+do MySQL. Então ou você hospeda a API em outro lugar (Render, etc.) e aponta o
+JavaScript para esse URL, ou não adianta subir só o frontend.
+
+
+--------------------------------------------------------------------------------
+Checklist antes de publicar
+--------------------------------------------------------------------------------
+
+[ ] Nunca commitar senha de banco no GitHub.
+[ ] cryptography instalado (MySQL 8) — já está no requirements.txt.
+[ ] CORS_ORIGINS incluir o domínio público (Render).
+[ ] O Render define a variável de ambiente PORT — use $PORT no start command.
+
+
+--------------------------------------------------------------------------------
+Se quiser “sempre grátis” com controle total
+--------------------------------------------------------------------------------
+
+Oracle Cloud “Always Free” (VM Linux): você instala MySQL + app manualmente.
+É poderoso, porém o passo a passo é longo (SSH, firewall, domínio). Bom se você
+já gosta de infraestrutura.
+
+================================================================================
+Dica para apresentação na faculdade: use OPÇÃO A (ngrok) se for só mostrar
+funcionando no dia; use OPÇÃO B se precisar de link “oficial” por alguns dias.
+================================================================================

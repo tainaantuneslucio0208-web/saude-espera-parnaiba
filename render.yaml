@@ -1,0 +1,12 @@
+# Blueprint Render — ajuste o nome do serviço se quiser.
+# Variáveis sensíveis (senha MySQL etc.) configure no painel: Environment.
+
+services:
+  - type: web
+    name: saude-espera-parnaiba
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health

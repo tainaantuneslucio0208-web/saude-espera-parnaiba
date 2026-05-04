@@ -1,0 +1,171 @@
+================================================================================
+DEPLOY GRÁTIS: Render (site na internet) + MySQL gratuito (Aiven) — passo a passo
+================================================================================
+
+Você vai:
+  (1) Criar um MySQL na nuvem (Aiven — plano free para testes)
+  (2) Criar o banco/tabela e importar a planilha
+  (3) Subir o código no GitHub
+  (4) Criar um Web Service no Render apontando para o GitHub
+  (5) Colocar variáveis de ambiente no Render e testar
+
+Tempo estimado: 40–90 minutos na primeira vez.
+
+--------------------------------------------------------------------------------
+PARTE 1 — Conta no Aiven e MySQL gratuito
+--------------------------------------------------------------------------------
+
+1) Acesse https://aiven.io e crie uma conta (pode usar login com Google/GitHub).
+
+2) No console Aiven: "Create service" → escolha **MySQL** → plano **Free** (ou
+   o menor disponível na sua região).
+
+3) Escolha região próxima (ex.: Google Cloud **São Paulo** se existir; senão
+   **US**). Nome do serviço: ex. mysql-saude-parnaiba.
+
+4) Após criar, abra o serviço MySQL e anote na aba "Overview" / "Connection":
+   - Host (ex.: mysql-xxxxx.a.aivencloud.com)
+   - Port (geralmente 3306 ou outro mostrado)
+   - User (default avnadmin ou similar)
+   - Password (copie e guarde em lugar seguro)
+   - Database: use o **default** que o Aiven mostra (ex.: defaultdb) OU crie um
+     novo database pelo cliente MySQL (veja Parte 2).
+
+5) SSL: o Aiven costuma exigir conexão TLS. No nosso projeto use no Render
+   (e no seu .env local ao importar):
+     MYSQL_SSL=true
+   Se der erro de certificado, no painel Aiven baixe o **CA certificate** e use:
+     MYSQL_SSL_CA=/caminho/para/o/arquivo.pem
+   (no Render você sobe o conteúdo como variável ou usa path se anexar arquivo;
+   na prática o default ssl.create_default_context() resolve na maioria dos casos.)
+
+--------------------------------------------------------------------------------
+PARTE 2 — Criar banco e tabela no MySQL da Aiven (Workbench ou cliente)
+--------------------------------------------------------------------------------
+
+1) No Aiven, em "Connection information", copie **URI** ou host/porta/usuário/senha.
+
+2) No MySQL Workbench: nova conexão:
+   - Hostname = host do Aiven
+   - Port = porta do Aiven
+   - Username / Password conforme Aiven
+   - Use SSL se o Workbench pedir (SSL tab → importar CA do Aiven se necessário)
+
+3) Conecte e execute o conteúdo do arquivo do projeto:
+      database/schema.sql
+   Ajuste se precisar: o script usa o nome saude_parnaiba. Se o Aiven só permitir
+   defaultdb, você pode:
+   - OU criar o schema saude_parnaiba dentro do servidor,
+   - OU mudar o script para USE defaultdb; e trocar MYSQL_DATABASE no Render.
+
+4) Crie um usuário dedicado (opcional) ou use o usuário do Aiven. Anote:
+   MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE (ex.: saude_parnaiba ou defaultdb)
+
+--------------------------------------------------------------------------------
+PARTE 3 — Importar os dados (no seu PC, apontando para o Aiven)
+--------------------------------------------------------------------------------
+
+1) No arquivo backend/.env (no seu computador), coloque os dados do Aiven:
+
+   MYSQL_HOST=....aivencloud.com
+   MYSQL_PORT=.... (número)
+   MYSQL_USER=....
+   MYSQL_PASSWORD=....
+   MYSQL_DATABASE=saude_parnaiba   (ou defaultdb)
+   MYSQL_SSL=true
+
+2) PowerShell:
+
+   cd C:\caminho\para\saude-espera-parnaiba\backend
+   .\.venv\Scripts\Activate.ps1    (se usar venv)
+   python -m pip install -r requirements.txt
+   python scripts\import_excel.py --file "C:\Users\Taina\Downloads\Tempo de Espera x Atendimento 1.xlsx" --truncate
+
+3) No Workbench (ligado ao Aiven), rode:
+   SELECT COUNT(*) FROM atendimentos;
+   Deve retornar um número grande.
+
+--------------------------------------------------------------------------------
+PARTE 4 — GitHub (sem senhas no repositório)
+--------------------------------------------------------------------------------
+
+1) Crie um repositório vazio no GitHub (ex.: saude-espera-parnaiba).
+
+2) Na pasta do projeto no PC, inicialize git (se ainda não tiver):
+
+   git init
+   git add .
+   git commit -m "Projeto saude espera"
+   git branch -M main
+   git remote add origin https://github.com/SEU_USUARIO/saude-espera-parnaiba.git
+   git push -u origin main
+
+3) Confirme que o GitHub NÃO contém backend/.env (o .gitignore já ignora .env).
+
+--------------------------------------------------------------------------------
+PARTE 5 — Render (Web Service)
+--------------------------------------------------------------------------------
+
+1) Acesse https://render.com e crie conta (pode usar GitHub).
+
+2) Dashboard → **New +** → **Web Service** → **Build and deploy from a Git
+   repository** → conecte o GitHub e escolha o repositório.
+
+3) Preencha:
+
+   Name: saude-espera-parnaiba (ou outro)
+   Region: Oregon (ou mais próximo)
+   Branch: main
+   Root Directory: (deixe VAZIO — raiz do repo)
+   Runtime: **Python 3**
+
+   Build Command:
+      pip install -r backend/requirements.txt
+
+   Start Command:
+      cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+   Instance type: **Free**
+
+4) Clique em **Advanced** → Add **Environment** (variáveis):
+
+   MYSQL_HOST        = (host Aiven)
+   MYSQL_PORT        = (porta Aiven)
+   MYSQL_USER        = (usuário)
+   MYSQL_PASSWORD    = (senha)
+   MYSQL_DATABASE    = (nome do banco onde está atendimentos)
+   MYSQL_SSL         = true
+
+   CORS_ORIGINS      = https://SUBSTITUA.onrender.com
+   (troque pelo URL EXATO que o Render vai mostrar depois do primeiro deploy;
+    você pode editar de novo após criar o serviço)
+
+5) Deploy. Espere o build terminar. Abra o link https://....onrender.com
+
+6) Se a página abrir mas /api/health der erro de banco, veja **Logs** no Render
+   e confira host/porta/ssl/senha.
+
+7) Depois que souber o URL final, edite CORS_ORIGINS para bater exatamente com
+   https://seu-nome.onrender.com (sem barra no final).
+
+--------------------------------------------------------------------------------
+PARTE 6 — Avisos importantes (plano grátis)
+--------------------------------------------------------------------------------
+
+- O Render **free** “dorme” após ~15 min sem tráfego. O primeiro acesso depois
+  disso pode levar ~30–60 segundos.
+- MySQL gratuito é para **teste/acadêmico**; não use para dados sensíveis reais.
+- Se trocar senha do MySQL, atualize as variáveis no Render e faça **Manual Deploy**.
+
+--------------------------------------------------------------------------------
+Arquivos úteis no repositório
+--------------------------------------------------------------------------------
+
+- render.yaml     → pode usar "New Blueprint" no Render para importar (opcional).
+- runtime.txt     → versão do Python (3.11.8) para o Render.
+- backend/.env.example → lembrete das variáveis (nunca commite .env real).
+
+================================================================================
+Se travar em algum passo, copie a mensagem de erro dos Logs do Render ou do
+PowerShell na importação e peça ajuda com esse texto.
+================================================================================

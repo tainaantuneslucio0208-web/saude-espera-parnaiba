@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0e14" />
+    <title>Apoio à decisão — Tempo de espera | Santana de Parnaíba</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo-fatec">
+          <img
+            class="logo-img"
+            src="/fatec-logo.png"
+            alt="Fatec Santana de Parnaíba"
+            width="220"
+            height="64"
+            loading="lazy"
+            decoding="async"
+            onload="document.getElementById('logo-fallback-block').style.display='none'"
+            onerror="this.remove()"
+          />
+          <div id="logo-fallback-block" class="logo-fallback-block" aria-hidden="true">
+            <span class="logo-f">F</span>
+            <div class="logo-text">
+              <strong>FATEC</strong>
+              <small>Santana de Parnaíba</small>
+            </div>
+          </div>
+        </div>
+        <div class="brand-copy">
+          <p class="eyebrow">Projeto acadêmico — dados históricos</p>
+          <h1>Qual unidade tende a ter menor espera?</h1>
+          <p class="lede">
+            Sistema de <strong>apoio à decisão</strong> (não é busca na web). Use filtros para comparar
+            <abbr title="Unidades Básicas de Saúde e hospitais">UBS/hospitais</abbr> da região com base em
+            médias históricas de tempo de espera.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel search-panel" aria-labelledby="search-title">
+        <h2 id="search-title" class="sr-only">Busca e filtros</h2>
+        <div class="search-row">
+          <label class="field grow">
+            <span>Pesquisar tudo</span>
+            <input
+              type="search"
+              id="q"
+              placeholder="Nome da unidade ou especialidade (ex.: pediatra, UPA)…"
+              autocomplete="off"
+              list="suggestions"
+            />
+            <datalist id="suggestions"></datalist>
+          </label>
+          <button type="button" class="btn primary" id="btn-search">Buscar</button>
+        </div>
+
+        <div class="filters">
+          <label class="field">
+            <span>Unidade</span>
+            <select id="unidade"></select>
+          </label>
+          <label class="field">
+            <span>Especialidade</span>
+            <select id="especialidade"></select>
+          </label>
+          <label class="field">
+            <span>Dia da semana</span>
+            <select id="dia">
+              <option value="">Qualquer dia</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Horário (hora cheia)</span>
+            <select id="hora">
+              <option value="">Qualquer hora</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="hint" id="insight" role="status"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="results-title">
+        <div class="section-head">
+          <h2 id="results-title">Top 3 unidades — menor tempo médio</h2>
+          <p class="sub" id="result-context"></p>
+        </div>
+        <div class="cards" id="cards"></div>
+        <p class="empty" id="empty-state" hidden>Nenhum resultado para os filtros atuais.</p>
+      </section>
+
+      <section class="panel charts" aria-labelledby="charts-title">
+        <div class="section-head">
+          <h2 id="charts-title">Visualizações</h2>
+          <p class="sub">Médias históricas conforme filtros de unidade e especialidade acima.</p>
+        </div>
+        <div class="chart-grid">
+          <article class="chart-card">
+            <h3>Tempo médio por hora</h3>
+            <canvas id="chart-hora" height="220"></canvas>
+          </article>
+          <article class="chart-card">
+            <h3>Tempo médio por dia da semana</h3>
+            <canvas id="chart-dia" height="220"></canvas>
+          </article>
+          <article class="chart-card wide">
+            <h3>Comparação entre unidades</h3>
+            <canvas id="chart-unidades" height="260"></canvas>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p>
+          Os rankings usam <strong>médias</strong> por unidade, considerando filtros escolhidos. Troque dia e hora para
+          ver padrões diferentes. Substitua o logo acima pelo arquivo oficial da FATEC quando disponível.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

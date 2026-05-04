@@ -1,0 +1,78 @@
+Motor de busca / apoio à decisão — tempo de espera (Santana de Parnaíba)
+================================================================================
+
+O que é "Docker instalado"?
+---------------------------
+Docker é um programa que roda o MySQL dentro de uma "caixinha" isolada (container),
+sem você precisar instalar o MySQL manualmente no Windows. O mais comum é o
+**Docker Desktop** (ícone de baleia na bandeja).
+
+Como saber se já tem:
+  - Abra o PowerShell e digite:  docker --version
+  - Se aparecer uma versão (ex.: Docker version 24.x), está instalado.
+  - Se der erro "não é reconhecido", ainda não está no PATH ou não está instalado.
+
+Você NÃO é obrigada a usar Docker: veja a seção "SEM DOCKER" abaixo.
+
+
+CAMINHO A — Com Docker (passo a passo)
+--------------------------------------
+
+0) Instalar (se ainda não tiver)
+   - Baixe "Docker Desktop for Windows": https://www.docker.com/products/docker-desktop/
+   - Instale, reinicie o PC se pedir, abra o Docker Desktop e espere ficar "Running".
+
+1) Subir o MySQL (Docker)
+   Na pasta saude-espera-parnaiba:
+   docker compose up -d
+   Porta externa: 3307 (usuário saude / senha saude123, banco saude_parnaiba).
+   Teste:  docker compose ps   (deve mostrar o serviço "mysql" como "running")
+
+2) Backend Python
+   cd backend
+   pip install -r requirements.txt
+   (Opcional) copie .env.example para .env e ajuste host/porta.
+
+3) Importar a planilha Excel para o MySQL
+   cd backend
+   python scripts/import_excel.py --file "C:\Users\Taina\Downloads\Tempo de Espera x Atendimento 1.xlsx" --truncate
+
+4) Iniciar a API + interface
+   cd backend
+   python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+5) Abrir no navegador
+   http://127.0.0.1:8000/
+
+Logo FATEC: coloque o arquivo oficial como frontend\fatec-logo.png (substitui o monograma "F" ao carregar).
+
+API JSON: http://127.0.0.1:8000/docs
+
+
+CAMINHO B — SEM Docker (MySQL já instalado no Windows, ex.: XAMPP ou MySQL Installer)
+------------------------------------------------------------------------------------
+
+1) Instale o MySQL 8 (ou use o MySQL do XAMPP) e deixe o serviço rodando (porta padrão 3306).
+
+2) Crie o banco e a tabela:
+   - Abra o "MySQL Workbench" ou linha de comando mysql.
+   - Execute o arquivo database\schema.sql (copie e cole o conteúdo, ou importe).
+
+3) Crie um usuário com acesso ao banco (ajuste a senha se quiser):
+   CREATE USER IF NOT EXISTS 'saude'@'localhost' IDENTIFIED BY 'saude123';
+   GRANT ALL ON saude_parnaiba.* TO 'saude'@'localhost';
+   FLUSH PRIVILEGES;
+
+4) Ajuste backend\.env para a porta do SEU MySQL (geralmente 3306, não 3307):
+   MYSQL_PORT=3306
+
+5) Continue a partir do passo 2 do "CAMINHO A" (pip install, importar Excel, uvicorn).
+
+
+Checklist rápido de teste
+-------------------------
+[ ] MySQL aceita conexão (Docker OU MySQL local).
+[ ] pip install -r backend\requirements.txt  sem erro grave.
+[ ] python scripts\import_excel.py ... --truncate  termina com "Importação concluída".
+[ ] uvicorn sobe sem erro e http://127.0.0.1:8000/docs abre.
+[ ] http://127.0.0.1:8000/ mostra a página e os gráficos após a importação.
